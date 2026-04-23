@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Casa Duna — Guida AI</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f7;display:flex;flex-direction:column}
+
+/* ── HEADER ──────────────────────────────────────────── */
+#header{width:100%;height:38vw;min-height:220px;max-height:340px;position:relative;overflow:hidden;flex-shrink:0}
+#headerImg{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ── LANG BAR ──────────────────────────────────────────── */
+.lang-bar{position:absolute;top:14px;right:14px;z-index:10;display:flex;gap:6px}
+.lang-btn{background:rgba(255,255,255,.88);border:none;border-radius:18px;padding:5px 11px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;color:#333;text-transform:uppercase;letter-spacing:.04em}
+.lang-btn:hover{background:#fff;transform:translateY(-1px)}
+.lang-btn.active{background:#000;color:#fff}
+
+/* ── BANNER ──────────────────────────────────────────── */
+#welcomeBanner{background:linear-gradient(135deg,#1e3a8a 0%,#3b82f6 100%);color:#fff;padding:14px 18px;font-size:13.5px;line-height:1.5;text-align:center;border-bottom:1px solid rgba(255,255,255,.15);flex-shrink:0}
+#welcomeBanner[data-confirmed="1"]{background:linear-gradient(135deg,#059669 0%,#10b981 100%)}
+.alert-link{color:#fbbf24;text-decoration:underline;cursor:pointer;font-weight:600}
+
+/* ── POPUP ──────────────────────────────────────────── */
+#alertOverlay{
+  display:none;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.6);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:1.5rem;
+}
+#alertOverlay.open{
+  display:flex;
+}
+.alert-box{
+  background:white;border-radius:1.4rem;
+  padding:1.6rem 1.4rem;
+  max-width:400px;width:100%;
+  box-shadow:0 8px 40px rgba(0,0,0,0.25);
+}
+.alert-box h3{
+  font-size:1.05rem;font-weight:600;
+  text-align:center;margin-bottom:1rem;
+}
+.alert-row{
+  display:flex;gap:0.65rem;
+  padding:0.85rem 0.95rem;
+  border-radius:0.9rem;
+  margin-bottom:0.65rem;
+}
+.alert-row.sand{background:#fff5f5;}
+.alert-row.energy{background:#fffbf0;margin-bottom:1.1rem;}
+.alert-row .ico{font-size:1.3rem;flex-shrink:0;}
+.alert-row p{font-size:0.85rem;line-height:1.5;color:#333;}
+.alert-row p strong{display:block;margin-bottom:0.15rem;color:#1a1a1a;}
+#alertCloseBtn{
+  width:100%;
+  background:#1e40af;
+  color:#fff;
+  border:none;
+  border-radius:0.9rem;
+  padding:0.75rem;
+  font-size:0.95rem;
+  font-weight:600;
+  cursor:pointer;
+  transition:background 0.2s;
+}
+#alertCloseBtn:hover{background:#1e3a8a;}
+
+/* ── CHAT AREA ──────────────────────────────────────────── */
+#chatArea{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+#conversation{flex:1;overflow-y:auto;padding:16px 14px;-webkit-overflow-scrolling:touch}
+.msg{margin-bottom:12px;display:flex;gap:9px}
+.msg.bot{flex-direction:row}
+.msg.user{flex-direction:row-reverse}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:#fff}
+.msg.bot .msg-avatar{background:linear-gradient(135deg,#3b82f6,#1e40af)}
+.msg.user .msg-avatar{background:linear-gradient(135deg,#10b981,#059669)}
+.msg-bubble{max-width:78%;padding:10px 13px;border-radius:16px;font-size:14px;line-height:1.5;word-wrap:break-word}
+.msg.bot .msg-bubble{background:#f0f0f0;color:#1a1a1a;border-bottom-left-radius:4px}
+.msg.user .msg-bubble{background:#1e40af;color:#fff;border-bottom-right-radius:4px}
+.msg-bubble a{color:#3b82f6;text-decoration:underline}
+.msg.user .msg-bubble a{color:#fbbf24}
+
+/* ── INPUT BAR ──────────────────────────────────────────── */
+#inputBar{border-top:1px solid #e5e5e5;background:#fff;flex-shrink:0}
+.inner{display:flex;gap:8px;padding:10px 12px}
+#msgInput{flex:1;border:1px solid #d1d5db;border-radius:20px;padding:8px 14px;font-size:14px;font-family:inherit;outline:none;resize:none;max-height:80px}
+#msgInput:focus{border-color:#3b82f6}
+#sendBtn{background:#1e40af;color:#fff;border:none;border-radius:50%;width:38px;height:38px;flex-shrink:0;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+#sendBtn:hover{background:#1e3a8a}
+#sendBtn:disabled{background:#d1d5db;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <!-- Carica foto_copertina_compressa.png su GitHub e sostituisci l'URL -->
+  <img id="headerImg" src="https://sberla74.github.io/casa-duna/foto_copertina.png" alt="Casa Duna">
+  <div class="lang-bar">
+    <button class="lang-btn active" id="btnIT" onclick="setLang('it')">🇮🇹 ITA</button>
+    <button class="lang-btn" id="btnEN" onclick="setLang('en')">🇬🇧 ENG</button>
+  </div>
+</div>
+
+<!-- BANNER -->
+<div id="welcomeBanner"></div>
+
+<!-- POPUP -->
+<div id="alertOverlay" onclick="if(event.target.id==='alertOverlay')closeAlert()">
+  <div class="alert-box">
+    <h3 id="alertTitle"></h3>
+    <div class="alert-row sand">
+      <span class="ico">⛔️</span>
+      <p><strong id="alertT1"></strong><span id="alertB1"></span></p>
+    </div>
+    <div class="alert-row energy">
+      <span class="ico">⚡</span>
+      <p><strong id="alertT2"></strong><span id="alertB2"></span></p>
+    </div>
+    <button id="alertCloseBtn" onclick="closeAlert()"></button>
+  </div>
+</div>
+
+<!-- CHAT -->
+<div id="chatArea">
+  <div id="conversation"></div>
+  <div id="inputBar">
+    <div class="inner">
+      <textarea id="msgInput" rows="1" placeholder="Scrivi un messaggio..."></textarea>
+      <button id="sendBtn" onclick="sendMsg()">→</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+<script>
+// ── CONFIG ────────────────────────────────────────────
+const WORKER_URL = 'https://claude-proxy.sberla74.workers.dev';
+const SESSION_ID = 'cd-' + Date.now() + '-' + Math.random().toString(36).slice(2,9);
+
+// ── FIREBASE ────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDcwiVQJXYeZ5DDp207Fz0Q1qSNqBgHJX0",
+  authDomain: "casa-manager-24414.firebaseapp.com",
+  databaseURL: "https://casa-manager-24414-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "casa-manager-24414",
+  storageBucket: "casa-manager-24414.appspot.com",
+  messagingSenderId: "545634139821",
+  appId: "1:545634139821:web:ff1efca5fe1ef0b8c3cea8"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function logMsg(role, content) {
+  db.ref('chats/casa_duna/' + SESSION_ID).push({
+    role: role,
+    content: content,
+    timestamp: firebase.database.ServerValue.TIMESTAMP
+  });
+}
+
+// ── SYSTEM PROMPT ────────────────────────────────────────────
+const SYSTEM_PROMPT_IT = `Sei Fabrizio, il property manager di Casa Duna a Donnalucata (Ragusa, Sicilia).
+Rispondi sempre in italiano, in modo amichevole, conciso e utile.
+
+INFORMAZIONI CASA DUNA:
+
+WiFi:
+- Rete: Casa_duna
+- Password: 22081945
+- Modem: si trova nel soppalco, NON TOCCARE. Per problemi contattare Fabrizio.
+
+Check-in/Check-out:
+- Arrivo: dalle 15:00
+- Partenza: entro le 10:00
+- Check-in gestito di persona. Self check-in disponibile su richiesta.
+- Per orari diversi contattare in anticipo: +39 349 006 9083
+
+REGOLE IMPORTANTI:
+1. NO sabbia nelle docce dei bagni interni (usare doccia esterna)
+2. Niente fumo all'interno (consentito in terrazza/giardino)
+3. Animali solo con autorizzazione preventiva
+4. Feste solo con accordo preventivo
+5. Non usare forno + AC + lavatrice + boiler insieme (rischio blackout)
+
+COLAZIONE & BAR:
+- Bar Riviera (granite): <a href="https://maps.app.goo.gl/GENZqL87PjUtmkts9">📍 Maps</a>
+- Tentazioni di Zucchero (cornetti/torte): <a href="https://maps.app.goo.gl/fztnAS6eHtSnB2jP7">📍 Maps</a>
+- Blue Moon: <a href="https://maps.app.goo.gl/KcAXiN8tD7xjvLMSA">📍 Maps</a>
+- Nivera: <a href="https://maps.app.goo.gl/roppkhqFEthftXcn8">📍 Maps</a> | Tel: 3938383833
+
+RISTORANTI CONSIGLIATI:
+- Le Gioie: <a href="https://maps.app.goo.gl/TZJJqvfVYYw3bsKS7">📍 Maps</a> | Tel: 3405479265
+- La Grotta: <a href="https://maps.app.goo.gl/tdUfNKewm4KgLL7J9">📍 Maps</a> | Tel: 0932931363
+- Prosit: <a href="https://maps.app.goo.gl/u4txYaC2AwFzJSGD6">📍 Maps</a> | Tel: 0932842028
+- Baqquala: <a href="https://maps.app.goo.gl/cupTSx5aDjMwCUCZ8">📍 Maps</a> | Tel: 0932931028
+- Osteria Tre Colli: <a href="https://maps.app.goo.gl/Z3KMbGhVVZe3s3Md8">📍 Maps</a> | Tel: 0932931605
+- Lievito Madre: <a href="https://maps.app.goo.gl/mBKwGBnkZHY55G4a8">📍 Maps</a> | Tel: 3313320100
+- Busacca: <a href="https://maps.app.goo.gl/hUAXAqjizNHsfm6G8">📍 Maps</a> | Tel: 3920665613
+- Pandivino: <a href="https://maps.app.goo.gl/zW8RRKjav7R8FmGt6">📍 Maps</a> | Tel: 3425715930
+- Mezzaparola: <a href="https://maps.app.goo.gl/jz8eLF6Tfs93BKhf8">📍 Maps</a>
+- A Varcuzza: <a href="https://maps.app.goo.gl/7BSNRHEnkZRuBQLq6">📍 Maps</a>
+- Giro di Vite: <a href="https://maps.app.goo.gl/WMcQeTcXWmTXD1Hg8">📍 Maps</a>
+- Sabir: <a href="https://maps.app.goo.gl/4uBWg2wcFTC9H1cW7">📍 Maps</a>
+- Jammola: <a href="https://maps.app.goo.gl/GyFrCpnSajuUiQU39">📍 Maps</a>
+
+GELATERIE & DOLCI:
+- Granifero: <a href="https://maps.app.goo.gl/hJAtRrp1K3VvCMqy6">📍 Maps</a> | Tel: 09321881697
+- Cannoli: <a href="https://maps.app.goo.gl/fFCmZTrQZrcnqs2Z8">📍 Maps</a> | Tel: 3517623343
+- Bar Gritti: <a href="https://maps.app.goo.gl/cVAGPwmJQakPRWhm6">📍 Maps</a> | Tel: 3395312148
+- Millenium: <a href="https://maps.app.goo.gl/DkaQxZ5ZWbV7SThr9">📍 Maps</a> | Tel: 0932842620
+- Candiano: <a href="https://maps.app.goo.gl/xV3LFk1TxVpEDmkg7">📍 Maps</a> | Tel: 0932835076
+
+SPESA & ALIMENTARI:
+- Voi Supermercato: <a href="https://maps.app.goo.gl/48gpcXHjamZEgAtG8">📍 Maps</a>
+- Conad Superstore: <a href="https://maps.app.goo.gl/K1MTKYkx1yrAAjxm6">📍 Maps</a>
+- Panificio e prodotti tipici: <a href="https://maps.app.goo.gl/Hrg6srdEo4BfKmVP9">📍 Maps</a>
+- Pescheria: <a href="https://maps.app.goo.gl/UGC8ntupqiWMvVhA6">📍 Maps</a>
+- Frutta e verdura: <a href="https://maps.app.goo.gl/BMubfGgfXGrrZuEF9">📍 Maps</a>
+- Decò: <a href="https://maps.app.goo.gl/fRZEfrGrnoERrxYeA">📍 Maps</a> | Tel: 0932931718
+
+NUMERI UTILI:
+- Farmacia Criscione: <a href="https://maps.app.goo.gl/s3zL8paFcmzixz6N7">📍 Maps</a> | Tel: 0932931244
+- Banca: <a href="https://maps.app.goo.gl/wUXrjWJSj31TPNsK8">📍 Maps</a>
+- Officina Meccanica: <a href="https://maps.app.goo.gl/ukB8zyaxJ2erRrxY8">📍 Maps</a>
+- Gommista: <a href="https://maps.app.goo.gl/gwz1XVKZXWaxQC7G8">📍 Maps</a>
+- Transfer/Noleggio Carmine: 328 415 1840
+
+EMERGENZE:
+- Ambulanza: 118
+- Pompieri: 115
+- Carabinieri Donnalucata: <a href="https://maps.app.goo.gl/3BPCawhWedt7FmDR7">📍 Maps</a> | Tel: 0932937254
+- Guardia Medica Donnalucata: <a href="https://maps.app.goo.gl/qAseNn198LUbWo146">📍 Maps</a> | Tel: 0932930056 (feriali 20-8, festivi h24)
+- Ospedale Scicli: <a href="https://maps.app.goo.gl/7kJBCyTaukZaG7GM8">📍 Maps</a> | Tel: 0932446111
+- Ospedale Modica: <a href="https://maps.app.goo.gl/jEsMYd3qmQsBum9G6">📍 Maps</a>
+- Ospedale Ragusa: <a href="https://maps.app.goo.gl/VkiTZZBB3WCwCi3Z7">📍 Maps</a>
+- Fabrizio (WhatsApp): +39 349 006 9083
+
+COSA VEDERE:
+- Scicli (centro barocco UNESCO): <a href="https://maps.app.goo.gl/xnqGuyf363r2duxj8">📍 Via Mormina Penna</a> | <a href="https://maps.app.goo.gl/yXYFXduHo1axQ8AAA">📍 Piazza Busacca</a> | <a href="https://maps.app.goo.gl/3Aj8QmZPErn1u1fm6">📍 Cava Santa Maria</a> | <a href="https://maps.app.goo.gl/v1TcMUGLxLp5UvTdA">📍 Cavuzza San Guglielmo</a> | <a href="https://maps.app.goo.gl/hJYXgwXMTdgGx4vNA">📍 Palazzo Beneventano</a> | <a href="https://maps.app.goo.gl/ugLcNhoeXNjw6idx7">📍 Grotte Chiafura</a> | <a href="https://maps.app.goo.gl/XohG9GmbBoMC9xVB6">📍 Chiesa San Matteo</a> | <a href="https://maps.app.goo.gl/gfTLS5j9KcaDmavT7">📍 Convento della Croce</a>
+- Modica: <a href="https://maps.app.goo.gl/v8o95uLbtMZwJ5ES8">📍 Maps</a>
+- Ragusa Ibla: <a href="https://maps.app.goo.gl/ATihDDSQHcfPoUGM9">📍 Maps</a>
+- Noto: <a href="https://maps.app.goo.gl/Fcv9Mgo6yVxjK2JZ8">📍 Maps</a>
+- Siracusa: <a href="https://maps.app.goo.gl/TQ7FJpj58eBvPXvq9">📍 Maps</a>
+
+Se non conosci la risposta, indica: "Non ho questa informazione, ma puoi chiedere direttamente a Fabrizio: <a href='https://wa.me/393490069083'>💬 WhatsApp</a>"
+Rispondi sempre in modo conciso. Includi sempre i link HTML quando disponibili.`;
+
+const SYSTEM_PROMPT_EN = `You are Fabrizio, the property manager of Casa Duna in Donnalucata (Ragusa, Sicily).
+Always respond in English, in a friendly, concise and helpful way.
+
+CASA DUNA INFO:
+
+WiFi:
+- Network: Casa_duna
+- Password: 22081945
+- Modem: located in the loft, DO NOT TOUCH. Contact Fabrizio for issues.
+
+Check-in/Check-out:
+- Arrival: from 3:00 PM
+- Departure: by 10:00 AM
+- Check-in managed in person. Self check-in available on request.
+- For different times contact in advance: +39 349 006 9083
+
+IMPORTANT RULES:
+1. NO sand in indoor showers (use outdoor shower)
+2. No smoking inside (allowed on terrace/garden)
+3. Pets only with prior authorization
+4. Parties only with prior agreement
+5. Don't use oven + AC + washing machine + boiler together (blackout risk)
+
+BREAKFAST & BARS:
+- Bar Riviera (granite): <a href="https://maps.app.goo.gl/GENZqL87PjUtmkts9">📍 Maps</a>
+- Tentazioni di Zucchero (pastries/cakes): <a href="https://maps.app.goo.gl/fztnAS6eHtSnB2jP7">📍 Maps</a>
+- Blue Moon: <a href="https://maps.app.goo.gl/KcAXiN8tD7xjvLMSA">📍 Maps</a>
+- Nivera: <a href="https://maps.app.goo.gl/roppkhqFEthftXcn8">📍 Maps</a> | Tel: 3938383833
+
+RECOMMENDED RESTAURANTS:
+- Le Gioie: <a href="https://maps.app.goo.gl/TZJJqvfVYYw3bsKS7">📍 Maps</a> | Tel: 3405479265
+- La Grotta: <a href="https://maps.app.goo.gl/tdUfNKewm4KgLL7J9">📍 Maps</a> | Tel: 0932931363
+- Prosit: <a href="https://maps.app.goo.gl/u4txYaC2AwFzJSGD6">📍 Maps</a> | Tel: 0932842028
+- Baqquala: <a href="https://maps.app.goo.gl/cupTSx5aDjMwCUCZ8">📍 Maps</a> | Tel: 0932931028
+- Osteria Tre Colli: <a href="https://maps.app.goo.gl/Z3KMbGhVVZe3s3Md8">📍 Maps</a> | Tel: 0932931605
+- Lievito Madre: <a href="https://maps.app.goo.gl/mBKwGBnkZHY55G4a8">📍 Maps</a> | Tel: 3313320100
+- Busacca: <a href="https://maps.app.goo.gl/hUAXAqjizNHsfm6G8">📍 Maps</a> | Tel: 3920665613
+- Pandivino: <a href="https://maps.app.goo.gl/zW8RRKjav7R8FmGt6">📍 Maps</a> | Tel: 3425715930
+- Mezzaparola: <a href="https://maps.app.goo.gl/jz8eLF6Tfs93BKhf8">📍 Maps</a>
+- A Varcuzza: <a href="https://maps.app.goo.gl/7BSNRHEnkZRuBQLq6">📍 Maps</a>
+- Giro di Vite: <a href="https://maps.app.goo.gl/WMcQeTcXWmTXD1Hg8">📍 Maps</a>
+- Sabir: <a href="https://maps.app.goo.gl/4uBWg2wcFTC9H1cW7">📍 Maps</a>
+- Jammola: <a href="https://maps.app.goo.gl/GyFrCpnSajuUiQU39">📍 Maps</a>
+
+ICE CREAM & SWEETS:
+- Granifero: <a href="https://maps.app.goo.gl/hJAtRrp1K3VvCMqy6">📍 Maps</a> | Tel: 09321881697
+- Cannoli: <a href="https://maps.app.goo.gl/fFCmZTrQZrcnqs2Z8">📍 Maps</a> | Tel: 3517623343
+- Bar Gritti: <a href="https://maps.app.goo.gl/cVAGPwmJQakPRWhm6">📍 Maps</a> | Tel: 3395312148
+- Millenium: <a href="https://maps.app.goo.gl/DkaQxZ5ZWbV7SThr9">📍 Maps</a> | Tel: 0932842620
+- Candiano: <a href="https://maps.app.goo.gl/xV3LFk1TxVpEDmkg7">📍 Maps</a> | Tel: 0932835076
+
+GROCERIES & FOOD:
+- Voi Supermarket: <a href="https://maps.app.goo.gl/48gpcXHjamZEgAtG8">📍 Maps</a>
+- Conad Superstore: <a href="https://maps.app.goo.gl/K1MTKYkx1yrAAjxm6">📍 Maps</a>
+- Bakery & local products: <a href="https://maps.app.goo.gl/Hrg6srdEo4BfKmVP9">📍 Maps</a>
+- Fish market: <a href="https://maps.app.goo.gl/UGC8ntupqiWMvVhA6">📍 Maps</a>
+- Fruit & vegetables: <a href="https://maps.app.goo.gl/BMubfGgfXGrrZuEF9">📍 Maps</a>
+- Decò: <a href="https://maps.app.goo.gl/fRZEfrGrnoERrxYeA">📍 Maps</a> | Tel: 0932931718
+
+USEFUL NUMBERS:
+- Pharmacy Criscione: <a href="https://maps.app.goo.gl/s3zL8paFcmzixz6N7">📍 Maps</a> | Tel: 0932931244
+- Bank: <a href="https://maps.app.goo.gl/wUXrjWJSj31TPNsK8">📍 Maps</a>
+- Car Repair: <a href="https://maps.app.goo.gl/ukB8zyaxJ2erRrxY8">📍 Maps</a>
+- Tire Shop: <a href="https://maps.app.goo.gl/gwz1XVKZXWaxQC7G8">📍 Maps</a>
+- Transfer/Rental Carmine: 328 415 1840
+
+EMERGENCIES:
+- Ambulance: 118
+- Fire Department: 115
+- Police Donnalucata: <a href="https://maps.app.goo.gl/3BPCawhWedt7FmDR7">📍 Maps</a> | Tel: 0932937254
+- Medical Guard Donnalucata: <a href="https://maps.app.goo.gl/qAseNn198LUbWo146">📍 Maps</a> | Tel: 0932930056 (weekdays 8pm-8am, holidays 24h)
+- Hospital Scicli: <a href="https://maps.app.goo.gl/7kJBCyTaukZaG7GM8">📍 Maps</a> | Tel: 0932446111
+- Hospital Modica: <a href="https://maps.app.goo.gl/jEsMYd3qmQsBum9G6">📍 Maps</a>
+- Hospital Ragusa: <a href="https://maps.app.goo.gl/VkiTZZBB3WCwCi3Z7">📍 Maps</a>
+- Fabrizio (WhatsApp): +39 349 006 9083
+
+PLACES TO VISIT:
+- Scicli (UNESCO Baroque): <a href="https://maps.app.goo.gl/xnqGuyf363r2duxj8">📍 Via Mormina Penna</a> | <a href="https://maps.app.goo.gl/yXYFXduHo1axQ8AAA">📍 Piazza Busacca</a> | <a href="https://maps.app.goo.gl/3Aj8QmZPErn1u1fm6">📍 Cava Santa Maria</a> | <a href="https://maps.app.goo.gl/v1TcMUGLxLp5UvTdA">📍 Cavuzza San Guglielmo</a> | <a href="https://maps.app.goo.gl/hJYXgwXMTdgGx4vNA">📍 Palazzo Beneventano</a> | <a href="https://maps.app.goo.gl/ugLcNhoeXNjw6idx7">📍 Chiafura Caves</a> | <a href="https://maps.app.goo.gl/XohG9GmbBoMC9xVB6">📍 San Matteo Church</a> | <a href="https://maps.app.goo.gl/gfTLS5j9KcaDmavT7">📍 Convent della Croce</a>
+- Modica: <a href="https://maps.app.goo.gl/v8o95uLbtMZwJ5ES8">📍 Maps</a>
+- Ragusa Ibla: <a href="https://maps.app.goo.gl/ATihDDSQHcfPoUGM9">📍 Maps</a>
+- Noto: <a href="https://maps.app.goo.gl/Fcv9Mgo6yVxjK2JZ8">📍 Maps</a>
+- Syracuse: <a href="https://maps.app.goo.gl/TQ7FJpj58eBvPXvq9">📍 Maps</a>
+
+If you don't know the answer, say: "I don't have this information, but you can ask Fabrizio directly: <a href='https://wa.me/393490069083'>💬 WhatsApp</a>"
+Always respond concisely. Always include HTML links when available.`;
+
+// ── LINGUE ────────────────────────────────────────────
+const T = {
+  it: {
+    bannerText: "Ciao! Sono Fabrizio, il tuo assistente virtuale.",
+    alertLink:  "⚠️ Prima di iniziare, clicca qui",
+    afterAlert: "Perfetto, allora diamo inizio alla tua vacanza! 😊 Come posso aiutarti?",
+    placeholder:"Scrivi un messaggio...",
+    alertTitle: "⚠️ Due cose importanti",
+    t1: "SABBIA", b1: "Ti chiediamo di sciacquare i piedi alla doccia esterna prima di entrare nei bagni interni. La sabbia ostruisce gli scarichi e potrebbe causare disagi durante il soggiorno.",
+    t2: "ENERGIA", b2: "Per evitare blackout, non utilizzare troppi elettrodomestici contemporaneamente (forno, aria condizionata, lavatrice, boiler acqua calda).",
+    closeBtn: "Ho capito ✓"
+  },
+  en: {
+    bannerText: "Hi! I'm Fabrizio, your virtual assistant.",
+    alertLink:  "⚠️ Important info before you start",
+    afterAlert: "Perfect, let's start your holiday! 😊 How can I help you?",
+    placeholder:"Type a message...",
+    alertTitle: "⚠️ Two important things",
+    t1: "SAND", b1: "Please rinse your feet at the outdoor shower before using indoor bathrooms. Sand can block the drains and cause problems during your stay.",
+    t2: "ENERGY", b2: "To avoid power cuts, please do not use too many appliances at the same time (oven, air conditioning, washing machine, water boiler).",
+    closeBtn: "Got it ✓"
+  }
+};
+
+let currentLang = 'it';
+let bannerConfirmed = false;
+
+function setLang(lang) {
+  currentLang = lang;
+  const t = T[lang];
+
+  // bottoni
+  document.getElementById('btnIT').className = 'lang-btn' + (lang==='it'?' active':'');
+  document.getElementById('btnEN').className = 'lang-btn' + (lang==='en'?' active':'');
+
+  // banner
+  if (!bannerConfirmed) {
+    const b = document.getElementById('welcomeBanner');
+    b.innerHTML = t.bannerText +
+      '<br><span class="alert-link" onclick="openAlert()">' + t.alertLink + '</span>';
+  }
+
+  // placeholder
+  document.getElementById('msgInput').placeholder = t.placeholder;
+}
+
+function openAlert() {
+  const t = T[currentLang];
+  document.getElementById('alertTitle').textContent = t.alertTitle;
+  document.getElementById('alertT1').textContent = t.t1;
+  document.getElementById('alertB1').textContent = t.b1;
+  document.getElementById('alertT2').textContent = t.t2;
+  document.getElementById('alertB2').textContent = t.b2;
+  document.getElementById('alertCloseBtn').textContent = t.closeBtn;
+  document.getElementById('alertOverlay').classList.add('open');
+}
+
+function closeAlert() {
+  document.getElementById('alertOverlay').classList.remove('open');
+  bannerConfirmed = true;
+  document.getElementById('welcomeBanner').innerHTML = T[currentLang].afterAlert;
+  document.getElementById('welcomeBanner').dataset.confirmed = '1';
+}
+
+// ── CHAT ────────────────────────────────────────────
+const conversationHistory = [];
+
+function addBotMsg(text) {
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = `
+    <div class="msg-avatar">F</div>
+    <div class="msg-bubble">${text}</div>
+  `;
+  document.getElementById('conversation').appendChild(d);
+  scrollToBottom();
+}
+
+function addUserMsg(text) {
+  const d = document.createElement('div');
+  d.className = 'msg user';
+  d.innerHTML = `
+    <div class="msg-bubble">${text}</div>
+    <div class="msg-avatar">Tu</div>
+  `;
+  document.getElementById('conversation').appendChild(d);
+  scrollToBottom();
+}
+
+function scrollToBottom() {
+  const c = document.getElementById('conversation');
+  c.scrollTop = c.scrollHeight;
+}
+
+async function sendMsg() {
+  const input = document.getElementById('msgInput');
+  const btn = document.getElementById('sendBtn');
+  const text = input.value.trim();
+  if (!text) return;
+
+  addUserMsg(text);
+  logMsg('user', text);
+  conversationHistory.push({role:'user', content:text});
+
+  input.value = '';
+  btn.disabled = true;
+
+  try {
+    const systemPrompt = currentLang === 'it' ? SYSTEM_PROMPT_IT : SYSTEM_PROMPT_EN;
+    const res = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        system: systemPrompt,
+        messages: conversationHistory
+      })
+    });
+
+    if (!res.ok) throw new Error('Network error');
+
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Errore nella risposta';
+
+    addBotMsg(reply);
+    logMsg('assistant', reply);
+    conversationHistory.push({role:'assistant', content:reply});
+
+  } catch (err) {
+    addBotMsg('❌ Errore di connessione. Riprova tra poco.');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── INPUT HANDLING ────────────────────────────────────────────
+document.getElementById('msgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMsg();
+  }
+});
+
+// ── INIT ────────────────────────────────────────────
+setLang('it');
+</script>
+</body>
+</html>
